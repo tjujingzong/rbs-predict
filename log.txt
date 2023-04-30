@@ -1,40 +1,41 @@
-DataSet: rbs
-Model: RSBMobileNetV2
+DataSet: rbs1
+Model: GoogleNet
 Encoder: triplet
-Num epochs: 80
+Num epochs: 70
 Learning rate: 0.001
 Batch size: 64
-Pearson Correlation Coefficient: -0.2336
+Mean Absolute Error: 14.5489
+Pearson Correlation Coefficient: -0.0150
+R^2 Score: -0.8453
 
-DataSet: rbs
-Model: RSBGoogLeNet
+DataSet: rbs1
+Model: MobileNet
 Encoder: triplet
-Num epochs: 80
+Num epochs: 70
 Learning rate: 0.001
 Batch size: 64
-Pearson Correlation Coefficient: 0.3425
+Mean Absolute Error: 12.9359
+Pearson Correlation Coefficient: 0.3599
+R^2 Score: -0.0295
 
-DataSet: promoter
-Model: RSBGoogLeNet
+DataSet: promoter1
+Model: GoogleNet
 Encoder: triplet
-Num epochs: 80
+Num epochs: 70
 Learning rate: 0.001
 Batch size: 64
-Pearson Correlation Coefficient: 0.7450
+Mean Absolute Error: 5.0011
+Pearson Correlation Coefficient: 0.6775
+R^2 Score: 0.4296
 
-DataSet: promoter
-Model: RSBMobileNetV2
+DataSet: promoter1
+Model: MobileNet
 Encoder: triplet
-Num epochs: 80
+Num epochs: 70
 Learning rate: 0.001
 Batch size: 64
-Pearson Correlation Coefficient: 0.7553
+Mean Absolute Error: 5.2287
+Pearson Correlation Coefficient: 0.6858
+R^2 Score: 0.4309
 
-DataSet: rbs
-Model: RSBMobileNetV2
-Encoder: triplet
-Num epochs: 80
-Learning rate: 0.001
-Batch size: 64
-Pearson Correlation Coefficient: 0.0642
 
