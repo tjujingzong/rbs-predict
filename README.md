@@ -1,8 +1,8 @@
 ### 数据集
 
-rbs 140 条长度为 30的序列 
+rbs 334 条长度为 30的序列  (剔除了部分长度不为30和GFP/OD大于300的序列)
 
-<img src="./pic/README/rbs-histogram.png" style="zoom: 50%;" />
+<img src="./pic/README/rbs-histogram-1683764770201-1.png" style="zoom:50%;" />
 
 promoter 591条长度为61的序列
 
@@ -49,19 +49,19 @@ MobileNet还采用了宽度乘子和分辨率乘子两个超参数来控制网�
 
 ### 结果
 
-#### RBS
+#### RBS1
 
 GoogleNet
 
-<img src="./pic/README/rbs1-GoogleNet_triplet_loss.png" style="zoom:50%;" />
+<img src="./pic/README/rbs1-GoogleNet_triplet_loss-1683809853977-1.png" style="zoom:50%;" />
 
-<img src="./pic/README/rbs1-GoogleNet_triplet_scatter-1682835417691-1.png" alt="rbs1-GoogleNet_triplet_scatter" style="zoom:50%;" />
+<img src="./pic/README/rbs1-GoogleNet_triplet_scatter-1683809853977-2.png" alt="rbs1-GoogleNet_triplet_scatter" style="zoom:50%;" />
 
 MobileNet
 
-<img src="./pic/README/rbs1-MobileNet_triplet_loss.png" style="zoom:50%;" />
+<img src="./pic/README/rbs1-MobileNet_triplet_loss-1683809890924-5.png" style="zoom:50%;" />
 
-<img src="./pic/README/rbs1-MobileNet_triplet_scatter-1682835447090-4.png" alt="rbs1-MobileNet_triplet_scatter" style="zoom:50%;" />
+<img src="./pic/README/rbs1-MobileNet_triplet_scatter-1683809890925-6.png" alt="rbs1-MobileNet_triplet_scatter" style="zoom:50%;" />
 
 #### 启动子
 
@@ -115,15 +115,35 @@ R² = 1 - (Σ(yi - ŷi)^2) / (Σ(yi - μy)^2)
 
 其中 yi 是实际值，ŷi 是预测值，μy 是实际值的均值。
 
-#### RBS
+#### RBS (347条序列)
 
 |      | GoogleNet | MobileNet |
 | ---- | ---- | ---- |
-| MAE | 14.5489 | 12.9359 |
-| PCC | -0.0150 | 0.3599 |
-| R²    | -0.8453 | -0.0295 |
+| MAE | 31.5646 | 61.2009 |
+| PCC | 0.1758 | -0.0866 |
+| R²    | -0.4855 | -6.5463 |
 
-RBS数据集上模型表现较差的主要原因可能是数据集太小。
+#### RBS1 (232条序列，不含H文库)
+
+|      | GoogleNet | MobileNet |
+| ---- | --------- | --------- |
+| MAE  | 57.1744   | 68.1741   |
+| PCC  | 0.8649    | 0.7811    |
+| R²   | 0.5061    | 0.4909    |
+
+#### RBS2 (224条序列，剔除了8条GFP/OD大于300的序列，应该是不能剔除的)
+
+|      | GoogleNet | MobileNet |
+| ---- | --------- | --------- |
+| MAE  | 31.5043   | 30.6685   |
+| PCC  | 0.3853    | 0.3795    |
+| R²   | 0.0921    | 0.0352    |
+
+因为数据集不同，我们评价时应该主要看PCC和R²，显然RBS1 结果最优。
+
+之前，从数据集分布规律来看，对于数据集中GFP/OD值极大的序列进行了剔除。但是从生物意义来看，GFP/OD这个值大的话，对应的RBS强度也会高，这些序列是不应该剔除的。
+
+H文库中的序列强度大部分为个位数，质量不高，添加后反而使模型效果变差。
 
 #### 启动子
 
@@ -135,3 +155,4 @@ RBS数据集上模型表现较差的主要原因可能是数据集太小。
 | PCC  | 0.5367             | 0.6775    | 0.6858    |
 | R²   | 0.3442             | 0.4296    | 0.4309    |
 
+ 
