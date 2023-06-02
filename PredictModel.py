@@ -196,9 +196,9 @@ def get_predictions(model, dataset, device):
 
 if __name__ == "__main__":
     encoders = ['one-hot', 'triplet', 'dimer']
-    encoder = encoders[2]
+    encoder = encoders[1]
     data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', 'rbs3']
-    data_name = data_names[4]
+    data_name = data_names[2]
     data_path = r'./data/' + data_name + '-data.csv'
     model_names = ['GoogleNet', 'MobileNet']
     model_name = model_names[1]

@@ -253,7 +253,7 @@ if __name__ == "__main__":
     data_name = data_names[2]
     data_path = r'./data/' + data_name + '-data.csv'
     model_names = ['GoogleNet', 'MobileNet', 'EnsembleNet-M', 'EnsembleNet-G']
-    model_name = model_names[3]
+    model_name = model_names[2]
     learning_rate = 0.001
     batch_size = 64
     num_epochs = 70
