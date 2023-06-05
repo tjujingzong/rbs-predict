@@ -2,7 +2,7 @@
 
 rbs 232 条长度为 30的序列
 
-<img src="./pic/README2/rbs1-histogram.png" alt="rbs1-histogram" style="zoom:50%;" />
+<img src="./pic/README2/rbs1-histogram.png" alt="rbs1-histogram" style="zoom:100%;" />
 
 ### 编码方式
 
@@ -17,7 +17,7 @@ char_map = {
 }
 ```
 
-- dimer 编码
+- dimer 编码**(理化特性)**
 
 将两个碱基为一组进行编码，用 长度为16 的向量
 

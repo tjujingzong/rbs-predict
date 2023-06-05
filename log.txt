@@ -501,3 +501,33 @@ Mean Absolute Error: 65.5578
 Pearson Correlation Coefficient: 0.7724
 R^2 Score: 0.3894
 
+DataSet: rbs1
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 71.3525
+Pearson Correlation Coefficient: 0.6699
+R^2 Score: 0.2240
+
+DataSet: rbs1
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 68.6376
+Pearson Correlation Coefficient: 0.8232
+R^2 Score: 0.4461
+
+DataSet: rbs1
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 70.3650
+Pearson Correlation Coefficient: 0.8478
+R^2 Score: 0.4376
+
