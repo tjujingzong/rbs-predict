@@ -531,3 +531,107 @@ Mean Absolute Error: 70.3650
 Pearson Correlation Coefficient: 0.8478
 R^2 Score: 0.4376
 
+DataSet: rbs1
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 70.0327
+Pearson Correlation Coefficient: 0.8178
+R^2 Score: 0.4174
+
+DataSet: rbs1
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 70.0327
+Pearson Correlation Coefficient: 0.8178
+R^2 Score: 0.4174
+
+DataSet: rbs1
+Model: GoogleNet
+Encoder: triplet
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 61.1271
+Pearson Correlation Coefficient: 0.8601
+R^2 Score: 0.5725
+
+DataSet: rbs1
+Model: GoogleNet
+Encoder: triplet
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 58.9578
+Pearson Correlation Coefficient: 0.8278
+R^2 Score: 0.5191
+
+DataSet: rbs1
+Model: MobileNet
+Encoder: triplet
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 64.7875
+Pearson Correlation Coefficient: 0.8133
+R^2 Score: 0.4763
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 429.7670
+Pearson Correlation Coefficient: -0.0150
+R^2 Score: -2.9208
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 59.7852
+Pearson Correlation Coefficient: 0.8742
+R^2 Score: 0.4563
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 59.7852
+Pearson Correlation Coefficient: 0.8742
+R^2 Score: 0.4563
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 64.5009
+Pearson Correlation Coefficient: 0.8545
+R^2 Score: 0.3865
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 64.5009
+Pearson Correlation Coefficient: 0.8545
+R^2 Score: 0.3865
+
+DataSet: rbs1
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 67.1699
+Pearson Correlation Coefficient: 0.7054
+R^2 Score: 0.3650
+

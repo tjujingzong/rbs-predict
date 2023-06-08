@@ -1,18 +1,16 @@
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.model_zoo as model_zoo
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
-from torchvision.models.googlenet import GoogLeNet, model_urls
-from torchvision.models.mobilenet import MobileNetV2
 from torchvision.models.mobilenet import mobilenet_v2
-from sklearn.metrics import mean_absolute_error
-import numpy as np
-import os
-from sklearn.metrics import r2_score
 
 
 # dfs遍历所有的碱基组合
@@ -66,9 +64,22 @@ def encoding(data, encode_type):
         output = torch.tensor(seq, dtype=torch.float32)
         output = output.permute(0, 2, 1)
     elif encode_type == 'dimer':
-        alphabet = ['A', 'T', 'C', 'G']
-        char_map = {}
-        dfs("", alphabet, char_map, 2)
+        char_map = {'GG': [-0.01, -1.78, 3.32, 0.3, 12.1, 32.0, -11.1, -12.2, -29.7, -3.26, 0.17],
+                    'GA': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -13.3, -35.5, -2.35, 0.1],
+                    'GC': [0.07, -1.39, 3.22, 0.0, 6.1, 35.0, -16.9, -14.2, -34.9, -3.42, 0.26],
+                    'GT': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.27],
+                    'AG': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.08],
+                    'AA': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.04],
+                    'AC': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.14],
+                    'AT': [-0.06, -1.36, 3.24, 1.1, 7.1, 33.0, -15.4, -5.7, -15.5, -1.1, 0.14],
+                    'CG': [0.3, -1.89, 3.3, -0.1, 12.1, 27.0, -15.6, -8.0, -19.4, -2.36, 0.35],
+                    'CA': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -10.5, -27.8, -2.11, 0.21],
+                    'CC': [-0.01, -1.78, 3.32, 0.3, 8.7, 32.0, -11.1, -12.2, -29.7, -3.26, 0.49],
+                    'CT': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.52],
+                    'TG': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -7.6, -19.2, -2.11, 0.34],
+                    'TA': [-0.02, -1.45, 3.26, -0.2, 10.7, 32.0, -16.0, -8.1, -22.6, -1.33, 0.21],
+                    'TC': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -10.2, -26.2, -2.35, 0.48],
+                    'TT': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.44]}
         seq = []
         for sequence in data:
             tmp = []
@@ -106,67 +117,12 @@ def read_data(path, encoder):
     return x_train, y_train, x_test, y_test, l
 
 
-# WrapperGoogleNet
-class WrapperGoogleNet(GoogLeNet):
-    def __init__(self, *args, pretrained=False, aux_logits=False, **kwargs):
-        super(WrapperGoogleNet, self).__init__(*args, **kwargs)
-        self.aux_logits = aux_logits  # aux_logits=False去掉分类器
-        if pretrained:
-            # 下面的这部分代码在 pretrained=True 时加载预训练权重，并去掉了与辅助分类器（auxiliary classifiers）相关的权重
-            state_dict = model_zoo.load_url(model_urls['googlenet'], progress=True)
-            state_dict = {k: v for k, v in state_dict.items() if "aux" not in k}
-            self.load_state_dict(state_dict, strict=False)
-
-
-class GoogleNet(nn.Module):
-    def __init__(self, num_classes, input_channels):
-        super(GoogleNet, self).__init__()
-        self.googlenet = WrapperGoogleNet(pretrained=True)
-        # 更改输入通道数 ImageNet 数据集上训练的原始 GoogleNet 模型中的参数设置
-        self.googlenet.conv1 = nn.Conv2d(input_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
-        # 使用了一个预训练的 GoogleNet 模型，因此 self.googlenet.fc 的输入维度固定为 1024。
-        self.googlenet.fc = nn.Linear(1024, num_classes)
-
-    def forward(self, x):
-        return self.googlenet(x)
-
-
-class EnsembleNet_G(nn.Module):
-    def __init__(self, num_classes, input_channels):
-        super(EnsembleNet_G, self).__init__()
-
-        self.googlenet_dimer = GoogleNet(num_classes, input_channels)
-        self.googlenet_triplet = GoogleNet(num_classes, input_channels)
-        self.fc = nn.Linear(1024 * 2, num_classes)
-        # 去除最后一层分类器
-        self.googlenet_dimer.googlenet.fc = nn.Identity()
-        self.googlenet_triplet.googlenet.fc = nn.Identity()
-
-    def forward(self, x_dimer, x_triplet):
-        # 提取两个googlenet的features，去掉最后一层分类器
-        features_dimer = self.googlenet_dimer.googlenet(x_dimer)
-        features_triplet = self.googlenet_triplet.googlenet(x_triplet)
-        # 将两个features拼接起来，沿着第一维度
-        features = torch.cat([features_dimer, features_triplet], dim=1)
-        out = self.fc(features)
-        return out
-
-
-class WrapperMobileNet(MobileNetV2):
-    def __init__(self, *args, pretrained=False, **kwargs):
-        super(WrapperMobileNet, self).__init__(*args, **kwargs)
-        if pretrained:
-            pretrained_model = mobilenet_v2(pretrained=True)
-            self.load_state_dict(pretrained_model.state_dict(), strict=False)
-
-
 class MobileNet(nn.Module):
     def __init__(self, num_classes, input_channels):
         super(MobileNet, self).__init__()
-        self.mobilenet = WrapperMobileNet(pretrained=True)
-        # 更改输入通道数 并与其他参数的设置与 MobileNetV2 中的一致。
-        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
-                                                  bias=False)
+        # Use the pretrained model as a base and modify the input and output layers
+        self.mobilenet = mobilenet_v2(pretrained=True)
+        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)
         self.mobilenet.classifier[1] = nn.Linear(1280, num_classes)
 
     def forward(self, x):
@@ -178,23 +134,17 @@ class EnsembleNet_M(nn.Module):
         super(EnsembleNet_M, self).__init__()
         self.mobilenet_dimer = MobileNet(num_classes, input_channels)
         self.mobilenet_triplet = MobileNet(num_classes, input_channels)
-
+        # Define an adaptive average pooling layer with output size 1x1
+        self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(1280 * 2, 1)
 
     def forward(self, x_dimer, x_triplet):
-        # 提取两个mobilenet的features，去掉最后一层分类器
-        features_dimer = self.mobilenet_dimer.mobilenet.features(x_dimer)
-        features_triplet = self.mobilenet_triplet.mobilenet.features(x_triplet)
-        # 将两个features的形状都调整为[64, 1280, 1, 1],定义一个自适应平均池化层，输出大小为1x1
-        pool = torch.nn.AdaptiveAvgPool2d((1, 1))
-        # 对两个features进行池化
-        features_dimer = pool(features_dimer)
-        features_triplet = pool(features_triplet)
-        # 将两个features拼接起来，沿着第一维度
-        features = torch.cat([features_dimer, features_triplet], dim=1)
-        # 将拼接后的features展平
-        features = features.view(features.size(0), -1)
-        # 用全连接层得到最终的输出
+        # Extract the features from both mobilenets and pool them
+        features_dimer = self.pool(self.mobilenet_dimer.mobilenet.features(x_dimer))
+        features_triplet = self.pool(self.mobilenet_triplet.mobilenet.features(x_triplet))
+        # Concatenate the features along the channel dimension and flatten them
+        features = torch.flatten(torch.cat([features_dimer, features_triplet], dim=1), 1)
+        # Use the fully connected layer to get the final output
         out = self.fc(features)
         return out
 
@@ -252,8 +202,8 @@ if __name__ == "__main__":
     data_names = ['rbs', 'promoter', 'rbs1', 'promoter1']
     data_name = data_names[2]
     data_path = r'./data/' + data_name + '-data.csv'
-    model_names = ['GoogleNet', 'MobileNet', 'EnsembleNet-M', 'EnsembleNet-G']
-    model_name = model_names[2]
+    model_names = ['EnsembleNet-M']
+    model_name = model_names[0]
     learning_rate = 0.001
     batch_size = 64
     num_epochs = 70
@@ -284,10 +234,6 @@ if __name__ == "__main__":
         model = EnsembleNet_M(num_classes, input_channels).to(device)
         model.mobilenet_dimer.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))
         model.mobilenet_triplet.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))
-    elif model_name == 'EnsembleNet-G':
-        model = EnsembleNet_G(num_classes, input_channels).to(device)
-        model.googlenet_dimer.load_state_dict(torch.load('model/rbs1-GoogleNet_dimer.pth'), strict=False)
-        model.googlenet_triplet.load_state_dict(torch.load('model/rbs1-GoogleNet_triplet.pth'), strict=False)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 

@@ -1,7 +1,7 @@
 import csv
 
 # 打开csv文件
-with open("di_prop.csv", newline="") as csvfile:
+with open("data/di_prop.csv", newline="") as csvfile:
     # 创建一个csv阅读器对象
     reader = csv.reader(csvfile)
     # 读取第一行，作为列名

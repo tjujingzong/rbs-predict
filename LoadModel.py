@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 from sklearn.model_selection import train_test_split
 from torchvision.models.googlenet import GoogLeNet, model_urls
-from torchvision.models.mobilenet import MobileNetV2
 from torchvision.models.mobilenet import mobilenet_v2
 
 
@@ -136,21 +135,12 @@ class GoogleNet(nn.Module):
         return self.googlenet(x)
 
 
-class WrapperMobileNet(MobileNetV2):
-    def __init__(self, *args, pretrained=False, **kwargs):
-        super(WrapperMobileNet, self).__init__(*args, **kwargs)
-        if pretrained:
-            pretrained_model = mobilenet_v2(pretrained=True)
-            self.load_state_dict(pretrained_model.state_dict(), strict=False)
-
-
 class MobileNet(nn.Module):
     def __init__(self, num_classes, input_channels):
         super(MobileNet, self).__init__()
-        self.mobilenet = WrapperMobileNet(pretrained=True)
-        # 更改输入通道数 并与其他参数的设置与 MobileNetV2 中的一致。
-        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
-                                                  bias=False)
+        # Use the pretrained model as a base and modify the input and output layers
+        self.mobilenet = mobilenet_v2(pretrained=True)
+        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)
         self.mobilenet.classifier[1] = nn.Linear(1280, num_classes)
 
     def forward(self, x):
@@ -172,8 +162,8 @@ if __name__ == "__main__":
     model.to(device)  # move the model to the device
     model.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))  # load the parameters from the file
     model.eval()  # set the model to evaluation mode
+
     sequence = "GGAGATGTTTATTATGAAGGAGGATTATCA"
     encoded_sequence = encoding([sequence], encode_type='dimer')  # encode the sequence into a tensor
-    print(encoded_sequence)
     intensity = model.forward(encoded_sequence)  # pass the tensor to the model and get the output
     print(intensity)  # print the predicted intensity

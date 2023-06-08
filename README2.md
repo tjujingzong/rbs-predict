@@ -19,17 +19,26 @@ char_map = {
 
 - dimer 编码**(理化特性)**
 
-将两个碱基为一组进行编码，用 长度为16 的向量
+考虑用RNA的11个理化性质，用 长度为11 的向量进行编码
 
 ```py
 char_map = {
-	'AA' = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'AT' = [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'AC' = [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-   	'AG' = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'TA' = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-	...
- }
+            'GG': [-0.01, -1.78, 3.32, 0.3, 12.1, 32.0, -11.1, -12.2, -29.7, -3.26, 0.17],
+            'GA': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -13.3, -35.5, -2.35, 0.1],
+            'GC': [0.07, -1.39, 3.22, 0.0, 6.1, 35.0, -16.9, -14.2, -34.9, -3.42, 0.26],
+            'GT': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.27],
+            'AG': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.08],
+            'AA': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.04],
+            'AC': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.14],
+            'AT': [-0.06, -1.36, 3.24, 1.1, 7.1, 33.0, -15.4, -5.7, -15.5, -1.1, 0.14],
+            'CG': [0.3, -1.89, 3.3, -0.1, 12.1, 27.0, -15.6, -8.0, -19.4, -2.36, 0.35],
+            'CA': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -10.5, -27.8, -2.11, 0.21],
+            'CC': [-0.01, -1.78, 3.32, 0.3, 8.7, 32.0, -11.1, -12.2, -29.7, -3.26, 0.49],
+            'CT': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.52],
+            'TG': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -7.6, -19.2, -2.11, 0.34],
+            'TA': [-0.02, -1.45, 3.26, -0.2, 10.7, 32.0, -16.0, -8.1, -22.6, -1.33, 0.21],
+            'TC': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -10.2, -26.2, -2.35, 0.48],
+            'TT': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.44]}
 ```
 
 - triplet 编码
@@ -61,23 +70,17 @@ class EnsembleNet_M(nn.Module):
         super(EnsembleNet_M, self).__init__()
         self.mobilenet_dimer = MobileNet(num_classes, input_channels)
         self.mobilenet_triplet = MobileNet(num_classes, input_channels)
-
+        # Define an adaptive average pooling layer with output size 1x1
+        self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(1280 * 2, 1)
 
     def forward(self, x_dimer, x_triplet):
-        # 提取两个mobilenet的features，去掉最后一层分类器
-        features_dimer = self.mobilenet_dimer.mobilenet.features(x_dimer)
-        features_triplet = self.mobilenet_triplet.mobilenet.features(x_triplet)
-        # 将两个features的形状都调整为[64, 1280, 1, 1],定义一个自适应平均池化层，输出大小为1x1
-        pool = torch.nn.AdaptiveAvgPool2d((1, 1))
-        # 对两个features进行池化
-        features_dimer = pool(features_dimer)
-        features_triplet = pool(features_triplet)
-        # 将两个features拼接起来，沿着第一维度
-        features = torch.cat([features_dimer, features_triplet], dim=1)
-        # 将拼接后的features展平
-        features = features.view(features.size(0), -1)
-        # 用全连接层得到最终的输出
+        # Extract the features from both mobilenets and pool them
+        features_dimer = self.pool(self.mobilenet_dimer.mobilenet.features(x_dimer))
+        features_triplet = self.pool(self.mobilenet_triplet.mobilenet.features(x_triplet))
+        # Concatenate the features along the channel dimension and flatten them
+        features = torch.flatten(torch.cat([features_dimer, features_triplet], dim=1), 1)
+        # Use the fully connected layer to get the final output
         out = self.fc(features)
         return out
 ```

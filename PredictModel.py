@@ -1,18 +1,17 @@
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.model_zoo as model_zoo
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
-from torchvision.models.googlenet import GoogLeNet, model_urls
-from torchvision.models.mobilenet import MobileNetV2
+from torchvision.models.googlenet import googlenet
 from torchvision.models.mobilenet import mobilenet_v2
-from sklearn.metrics import mean_absolute_error
-import numpy as np
-import os
-from sklearn.metrics import r2_score
 
 
 # dfs遍历所有的碱基组合
@@ -66,22 +65,23 @@ def encoding(data, encode_type):
         output = torch.tensor(seq, dtype=torch.float32)
         output = output.permute(0, 2, 1)
     elif encode_type == 'dimer':
-        char_map = {'GG': [-0.01, -1.78, 3.32, 0.3, 12.1, 32.0, -11.1, -12.2, -29.7, -3.26, 0.17],
-                    'GA': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -13.3, -35.5, -2.35, 0.1],
-                    'GC': [0.07, -1.39, 3.22, 0.0, 6.1, 35.0, -16.9, -14.2, -34.9, -3.42, 0.26],
-                    'GT': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.27],
-                    'AG': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.08],
-                    'AA': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.04],
-                    'AC': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.14],
-                    'AT': [-0.06, -1.36, 3.24, 1.1, 7.1, 33.0, -15.4, -5.7, -15.5, -1.1, 0.14],
-                    'CG': [0.3, -1.89, 3.3, -0.1, 12.1, 27.0, -15.6, -8.0, -19.4, -2.36, 0.35],
-                    'CA': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -10.5, -27.8, -2.11, 0.21],
-                    'CC': [-0.01, -1.78, 3.32, 0.3, 8.7, 32.0, -11.1, -12.2, -29.7, -3.26, 0.49],
-                    'CT': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.52],
-                    'TG': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -7.6, -19.2, -2.11, 0.34],
-                    'TA': [-0.02, -1.45, 3.26, -0.2, 10.7, 32.0, -16.0, -8.1, -22.6, -1.33, 0.21],
-                    'TC': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -10.2, -26.2, -2.35, 0.48],
-                    'TT': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.44]}
+        char_map = {
+            'GG': [-0.01, -1.78, 3.32, 0.3, 12.1, 32.0, -11.1, -12.2, -29.7, -3.26, 0.17],
+            'GA': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -13.3, -35.5, -2.35, 0.1],
+            'GC': [0.07, -1.39, 3.22, 0.0, 6.1, 35.0, -16.9, -14.2, -34.9, -3.42, 0.26],
+            'GT': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.27],
+            'AG': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.08],
+            'AA': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.04],
+            'AC': [0.23, -1.43, 3.24, 0.8, 4.8, 32.0, -13.8, -10.2, -26.2, -2.24, 0.14],
+            'AT': [-0.06, -1.36, 3.24, 1.1, 7.1, 33.0, -15.4, -5.7, -15.5, -1.1, 0.14],
+            'CG': [0.3, -1.89, 3.3, -0.1, 12.1, 27.0, -15.6, -8.0, -19.4, -2.36, 0.35],
+            'CA': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -10.5, -27.8, -2.11, 0.21],
+            'CC': [-0.01, -1.78, 3.32, 0.3, 8.7, 32.0, -11.1, -12.2, -29.7, -3.26, 0.49],
+            'CT': [-0.04, -1.5, 3.3, 0.5, 8.5, 30.0, -14.0, -7.6, -19.2, -2.08, 0.52],
+            'TG': [0.11, -1.46, 3.09, 1.0, 9.9, 31.0, -14.4, -7.6, -19.2, -2.11, 0.34],
+            'TA': [-0.02, -1.45, 3.26, -0.2, 10.7, 32.0, -16.0, -8.1, -22.6, -1.33, 0.21],
+            'TC': [0.07, -1.7, 3.38, 1.3, 9.4, 32.0, -14.2, -10.2, -26.2, -2.35, 0.48],
+            'TT': [-0.08, -1.27, 3.18, -0.8, 7.0, 31.0, -13.7, -6.6, -18.4, -0.93, 0.44]}
         seq = []
         for sequence in data:
             tmp = []
@@ -119,45 +119,24 @@ def read_data(path):
     return x_train, y_train, x_test, y_test, l
 
 
-# WrapperGoogleNet
-class WrapperGoogleNet(GoogLeNet):
-    def __init__(self, *args, pretrained=False, **kwargs):
-        super(WrapperGoogleNet, self).__init__(*args, **kwargs)
-        if pretrained:
-            # 下面的这部分代码在 pretrained=True 时加载预训练权重，并去掉了与辅助分类器（auxiliary classifiers）相关的权重
-            state_dict = model_zoo.load_url(model_urls['googlenet'], progress=True)
-            state_dict = {k: v for k, v in state_dict.items() if "aux" not in k}
-            self.load_state_dict(state_dict, strict=False)
-
-
 class GoogleNet(nn.Module):
     def __init__(self, num_classes, input_channels):
         super(GoogleNet, self).__init__()
-        self.googlenet = WrapperGoogleNet(pretrained=True, aux_logits=False)
-        # 更改输入通道数 ImageNet 数据集上训练的原始 GoogleNet 模型中的参数设置
-        self.googlenet.conv1 = nn.Conv2d(input_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
-        # 使用了一个预训练的 GoogleNet 模型，因此 self.googlenet.fc 的输入维度固定为 1024。
+        # Use the pretrained model as a base and modify the input and output layers
+        self.googlenet = googlenet(pretrained=True, aux_logits=False, transform_input=False)
+        self.googlenet.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3)
         self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
         return self.googlenet(x)
 
 
-class WrapperMobileNet(MobileNetV2):
-    def __init__(self, *args, pretrained=False, **kwargs):
-        super(WrapperMobileNet, self).__init__(*args, **kwargs)
-        if pretrained:
-            pretrained_model = mobilenet_v2(pretrained=True)
-            self.load_state_dict(pretrained_model.state_dict(), strict=False)
-
-
 class MobileNet(nn.Module):
     def __init__(self, num_classes, input_channels):
         super(MobileNet, self).__init__()
-        self.mobilenet = WrapperMobileNet(pretrained=True)
-        # 更改输入通道数 并与其他参数的设置与 MobileNetV2 中的一致。
-        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
-                                                  bias=False)
+        # Use the pretrained model as a base and modify the input and output layers
+        self.mobilenet = mobilenet_v2(pretrained=True)
+        self.mobilenet.features[0][0] = nn.Conv2d(input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)
         self.mobilenet.classifier[1] = nn.Linear(1280, num_classes)
 
     def forward(self, x):
@@ -209,7 +188,7 @@ def get_predictions(model, dataset, device):
 
 if __name__ == "__main__":
     encoders = ['one-hot', 'triplet', 'dimer']
-    encoder = encoders[2]
+    encoder = encoders[1]
     data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', 'rbs3']
     data_name = data_names[2]
     data_path = r'./data/' + data_name + '-data.csv'
