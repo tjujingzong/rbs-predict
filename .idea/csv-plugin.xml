@@ -3,6 +3,13 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="\data\RBS-317-data.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\data\RBS-317-secondary-structure.csv">
           <value>
             <Attribute>
@@ -45,7 +52,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\di_prop.csv">
+        <entry key="\data\seqs.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

@@ -1,9 +1,6 @@
 import pandas as pd
 import torch
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
-from sklearn.model_selection import train_test_split
-from torchvision.models.googlenet import GoogLeNet, model_urls
 from torchvision.models.mobilenet import mobilenet_v2
 
 
@@ -95,44 +92,9 @@ def encoding(data, encode_type):
 def read_data(path):
     dataset = pd.read_csv(path, header=None)
     x = dataset.iloc[:, 0]
-    y = dataset.iloc[:, 1]
-    l = len(x[0])  # 序列长度
-    x_encoded = encoding(x, encoder)
-    y = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
-
-    # 划分训练集和测试集 当random_state设置为一个固定的整数值时，每次运行train_test_split函数时，数据的分割结果将保持一致。
-    x_train, x_test, y_train, y_test = train_test_split(x_encoded, y, test_size=0.2, random_state=43)
-
-    x_train = x_train.to(device)
-    x_test = x_test.to(device)
-    y_train = y_train.to(device)
-    y_test = y_test.to(device)
-
-    return x_train, y_train, x_test, y_test, l
-
-
-# WrapperGoogleNet
-class WrapperGoogleNet(GoogLeNet):
-    def __init__(self, *args, pretrained=False, **kwargs):
-        super(WrapperGoogleNet, self).__init__(*args, **kwargs)
-        if pretrained:
-            # 下面的这部分代码在 pretrained=True 时加载预训练权重，并去掉了与辅助分类器（auxiliary classifiers）相关的权重
-            state_dict = model_zoo.load_url(model_urls['googlenet'], progress=True)
-            state_dict = {k: v for k, v in state_dict.items() if "aux" not in k}
-            self.load_state_dict(state_dict, strict=False)
-
-
-class GoogleNet(nn.Module):
-    def __init__(self, num_classes, input_channels):
-        super(GoogleNet, self).__init__()
-        self.googlenet = WrapperGoogleNet(pretrained=True, aux_logits=False)
-        # 更改输入通道数 ImageNet 数据集上训练的原始 GoogleNet 模型中的参数设置
-        self.googlenet.conv1 = nn.Conv2d(input_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
-        # 使用了一个预训练的 GoogleNet 模型，因此 self.googlenet.fc 的输入维度固定为 1024。
-        self.googlenet.fc = nn.Linear(1024, num_classes)
-
-    def forward(self, x):
-        return self.googlenet(x)
+    # 去除第一行
+    x = x.drop(labels=0, axis=0)
+    return x
 
 
 class MobileNet(nn.Module):
@@ -147,23 +109,64 @@ class MobileNet(nn.Module):
         return self.mobilenet(x)
 
 
+class EnsembleNet_M(nn.Module):
+    def __init__(self, num_classes, input_channels):
+        super(EnsembleNet_M, self).__init__()
+        self.mobilenet_dimer = MobileNet(num_classes, input_channels)
+        self.mobilenet_triplet = MobileNet(num_classes, input_channels)
+        # Define an adaptive average pooling layer with output size 1x1
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(1280 * 2, 1)
+
+    def forward(self, x_dimer, x_triplet):
+        # Extract the features from both mobilenets and pool them
+        features_dimer = self.pool(self.mobilenet_dimer.mobilenet.features(x_dimer))
+        features_triplet = self.pool(self.mobilenet_triplet.mobilenet.features(x_triplet))
+        # Concatenate the features along the channel dimension and flatten them
+        features = torch.flatten(torch.cat([features_dimer, features_triplet], dim=1), 1)
+        # Use the fully connected layer to get the final output
+        out = self.fc(features)
+        return out
+
+
 if __name__ == "__main__":
-    encoders = ['one-hot', 'triplet', 'dimer']
-    encoder = encoders[2]
-    data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', 'rbs3']
-    data_name = data_names[2]
-    data_path = r'./data/' + data_name + '-data.csv'
+
+    data_names = ['RBS-317']
+    data_name = data_names[0]
     model_names = ['GoogleNet', 'MobileNet']
-    model_name = model_names[1]
-    model_path = 'model/' + data_name + '-' + model_name + '_' + encoder + '.pth'
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = MobileNet(num_classes=1, input_channels=1)  # create an instance of the same model class
-    model.to(device)  # move the model to the device
-    model.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))  # load the parameters from the file
-    model.eval()  # set the model to evaluation mode
+    data_path = r'./data/seqs.csv'
+    seqs = read_data(data_path)
 
-    sequence = "GGAGATGTTTATTATGAAGGAGGATTATCA"
-    encoded_sequence = encoding([sequence], encode_type='dimer')  # encode the sequence into a tensor
-    intensity = model.forward(encoded_sequence)  # pass the tensor to the model and get the output
-    print(intensity)  # print the predicted intensity
+    model_paths = ['model/RBS-317-MobileNet_triplet.pth', 'model/RBS-317-MobileNet_dimer.pth',
+                   'model/RBS-317-EnsembleNet-M.pth']
+
+    for model_path in model_paths:
+        if model_path.find('Ensemble') == -1:
+            model = MobileNet(num_classes=1, input_channels=1)  # create an instance of the same model class
+        else:
+            model = EnsembleNet_M(num_classes=1, input_channels=1)
+        model.to(device)  # move the model to the device
+        model.load_state_dict(torch.load(model_path))  # load the parameters from the file
+        model.eval()  # set the model to evaluation mode
+        if model_path.find('triplet') != -1:
+            encoder = 'triplet'
+        elif model_path.find('dimer') != -1:
+            encoder = 'dimer'
+        result = []
+        for sequence in seqs:
+            if model_path.find('Ensemble') == -1:
+                encoded_sequence = encoding([sequence], encode_type=encoder)  # encode the sequence into a tensor
+                intensity = model.forward(encoded_sequence)  # pass the tensor to the model and get the output
+            else:
+                encoded_sequence1 = encoding([sequence], encode_type='dimer')
+                encoded_sequence2 = encoding([sequence], encode_type='triplet')
+                intensity = model.forward(encoded_sequence1, encoded_sequence2)
+            result.append(intensity.item())
+            print(intensity.item())
+
+    # 保存预测结果到data_path中新的一列
+    df = pd.read_csv(data_path)
+    df[model_path] = result
+    df.to_csv(data_path, index=False)

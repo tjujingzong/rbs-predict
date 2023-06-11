@@ -635,3 +635,51 @@ Mean Absolute Error: 67.1699
 Pearson Correlation Coefficient: 0.7054
 R^2 Score: 0.3650
 
+DataSet: RBS-317
+Model: MobileNet
+Encoder: triplet
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 61.4571
+Pearson Correlation Coefficient: 0.4210
+R^2 Score: 0.1190
+
+DataSet: RBS-317
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 69.5938
+Pearson Correlation Coefficient: 0.1647
+R^2 Score: -0.4915
+
+DataSet: RBS-317
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 106.8135
+Pearson Correlation Coefficient: 0.4467
+R^2 Score: -1.2925
+
+DataSet: RBS-317
+Model: MobileNet
+Encoder: dimer
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 88.9604
+Pearson Correlation Coefficient: 0.3745
+R^2 Score: -0.4886
+
+DataSet: RBS-317
+Model: EnsembleNet-M
+Num epochs: 70
+Learning rate: 0.001
+Batch size: 64
+Mean Absolute Error: 68.0180
+Pearson Correlation Coefficient: 0.3999
+R^2 Score: 0.1177
+

@@ -199,8 +199,8 @@ if __name__ == "__main__":
     encoders = ['one-hot', 'triplet', 'dimer']
     encoder1 = encoders[2]
     encoder2 = encoders[1]
-    data_names = ['rbs', 'promoter', 'rbs1', 'promoter1']
-    data_name = data_names[2]
+    data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', "RBS-317"]
+    data_name = data_names[4]
     data_path = r'./data/' + data_name + '-data.csv'
     model_names = ['EnsembleNet-M']
     model_name = model_names[0]
@@ -232,8 +232,8 @@ if __name__ == "__main__":
 
     if model_name == 'EnsembleNet-M':
         model = EnsembleNet_M(num_classes, input_channels).to(device)
-        model.mobilenet_dimer.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))
-        model.mobilenet_triplet.load_state_dict(torch.load('model/rbs1-MobileNet_dimer.pth'))
+        model.mobilenet_dimer.load_state_dict(torch.load('model/' + data_name + '-MobileNet_dimer.pth'))
+        model.mobilenet_triplet.load_state_dict(torch.load('model/' + data_name + '-MobileNet_triplet.pth'))
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
