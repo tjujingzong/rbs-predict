@@ -10,14 +10,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\data\RBS-317-secondary-structure.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\data\RBS-317.csv">
+        <entry key="\data\ga_born_rbs.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -45,14 +38,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\data\rbs1-data.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\data\seqs.csv">
+        <entry key="\data\vae_born_rbs.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

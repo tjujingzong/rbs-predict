@@ -199,8 +199,8 @@ if __name__ == "__main__":
     encoders = ['one-hot', 'triplet', 'dimer']
     encoder1 = encoders[2]
     encoder2 = encoders[1]
-    data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', "RBS-317"]
-    data_name = data_names[4]
+    data_names = ['RBS-232', 'RBS-317']
+    data_name = data_names[0]
     data_path = r'./data/' + data_name + '-data.csv'
     model_names = ['EnsembleNet-M']
     model_name = model_names[0]

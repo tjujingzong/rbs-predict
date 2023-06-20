@@ -136,9 +136,9 @@ if __name__ == "__main__":
     model_names = ['GoogleNet', 'MobileNet']
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    data_path = r'./data/seqs.csv'
+    data_path = r'./data/vae_born_rbs.csv'
     seqs = read_data(data_path)
-
+    df = pd.read_csv(data_path)
     model_paths = ['model/RBS-317-MobileNet_triplet.pth', 'model/RBS-317-MobileNet_dimer.pth',
                    'model/RBS-317-EnsembleNet-M.pth']
 
@@ -164,9 +164,9 @@ if __name__ == "__main__":
                 encoded_sequence2 = encoding([sequence], encode_type='triplet')
                 intensity = model.forward(encoded_sequence1, encoded_sequence2)
             result.append(intensity.item())
-            print(intensity.item())
+            # print(intensity.item())
 
-    # 保存预测结果到data_path中新的一列
-    df = pd.read_csv(data_path)
-    df[model_path] = result
+        # 保存预测结果到data_path中新的一列
+        df[model_path] = result
+
     df.to_csv(data_path, index=False)

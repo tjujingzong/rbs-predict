@@ -13,6 +13,21 @@ from torch.utils.data import DataLoader, TensorDataset
 from torchvision.models.googlenet import googlenet
 from torchvision.models.mobilenet import mobilenet_v2
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+encoders = ['triplet', 'dimer', 'dimer-1', 'combined']
+encoder = encoders[3]
+data_names = ['RBS-232', 'RBS-317']
+data_name = data_names[0]
+data_path = r'./data/' + data_name + '-data.csv'
+model_names = ['GoogleNet', 'MobileNet']
+model_name = model_names[1]
+learning_rate = 0.001
+batch_size = 64
+num_epochs = 70
+num_classes = 1  # 输出类别数
+input_channels = 1  # 输入通道数 一般图像为3，这里由于是序列，所以为1
+model_path = 'model/' + data_name + '-' + model_name + '_' + encoder + '.pth'
+
 
 # dfs遍历所有的碱基组合
 def dfs(current, alphabet, char_map, layer):
@@ -48,22 +63,6 @@ def encoding(data, encode_type):
                         tmp[i].append(0)
             seq.append(tmp)
         output = torch.tensor(seq, dtype=torch.float32)
-    elif encode_type == 'triplet':
-        alphabet = ['A', 'T', 'C', 'G']
-        char_map = {}
-        dfs("", alphabet, char_map, 3)
-        seq = []
-        for sequence in data:
-            tmp = []
-            for i in range(len(sequence) - 2):  # 仅对序列中的前n-2个碱基进行编码
-                triplet = sequence[i:i + 3].upper()
-                if triplet in char_map:
-                    tmp.append(char_map[triplet])
-                else:
-                    tmp.append([0] * 64)  # 对于无效的三碱基组合，使用全零编码
-            seq.append(tmp)
-        output = torch.tensor(seq, dtype=torch.float32)
-        output = output.permute(0, 2, 1)
     elif encode_type == 'dimer':
         char_map = {
             'GG': [-0.01, -1.78, 3.32, 0.3, 12.1, 32.0, -11.1, -12.2, -29.7, -3.26, 0.17],
@@ -94,9 +93,77 @@ def encoding(data, encode_type):
             seq.append(tmp)
         output = torch.tensor(seq, dtype=torch.float32)
         output = output.permute(0, 2, 1)
+    elif encode_type == 'dimer-1':
+        alphabet = ['A', 'T', 'C', 'G']
+        char_map = {}
+        dfs("", alphabet, char_map, 2)
+        seq = []
+        for sequence in data:
+            tmp = []
+            for i in range(len(sequence) - 1):  # 仅对序列中的前n-2个碱基进行编码
+                triplet = sequence[i:i + 2].upper()
+                if triplet in char_map:
+                    tmp.append(char_map[triplet])
+                else:
+                    tmp.append([0] * 16)  # 对于无效的三碱基组合，使用全零编码
+            seq.append(tmp)
+        output = torch.tensor(seq, dtype=torch.float32)
+        output = output.permute(0, 2, 1)
+    elif encode_type == 'triplet':
+        alphabet = ['A', 'T', 'C', 'G']
+        char_map = {}
+        dfs("", alphabet, char_map, 3)
+        seq = []
+        for sequence in data:
+            tmp = []
+            for i in range(len(sequence) - 2):  # 仅对序列中的前n-2个碱基进行编码
+                triplet = sequence[i:i + 3].upper()
+                if triplet in char_map:
+                    tmp.append(char_map[triplet])
+                else:
+                    tmp.append([0] * 64)  # 对于无效的三碱基组合，使用全零编码
+            seq.append(tmp)
+        output = torch.tensor(seq, dtype=torch.float32)
+        output = output.permute(0, 2, 1)
+    elif encode_type == 'combined':
+        one_hot_encoded = encoding(data, 'one-hot')
 
+        dimer_encoded = encoding(data, 'dimer')
+        zero_tensor = torch.zeros_like(dimer_encoded)
+        zero_tensor = zero_tensor[..., :1]
+        dimer_encoded = torch.cat([dimer_encoded, zero_tensor], dim=-1)
+
+        dimer_1_encoded = encoding(data, 'dimer-1')
+        zero_tensor = torch.zeros_like(dimer_1_encoded)
+        zero_tensor = zero_tensor[..., :1]
+        dimer_1_encoded = torch.cat([dimer_1_encoded, zero_tensor], dim=-1)
+
+        triplet_encoded = encoding(data, 'triplet')
+        zero_tensor = torch.zeros_like(triplet_encoded)
+        zero_tensor = zero_tensor[..., :2]
+        triplet_encoded = torch.cat([triplet_encoded, zero_tensor], dim=-1)
+
+        secondary_structure = get_secondary_structure(data_path)
+
+        output = torch.cat([one_hot_encoded, dimer_encoded, dimer_1_encoded, triplet_encoded, secondary_structure],
+                           dim=2)
+        print(output.shape)
+        return output.to(device)
     output = output.unsqueeze(1)
     return output.to(device)
+
+
+def get_secondary_structure(data_path):
+    dataset = pd.read_csv(data_path, header=None)
+    # dataset = dataset.iloc[1:, :]  # 去除第一行
+    y = dataset.iloc[:, -1]  # 取出最后一列
+    dic = {'(': -1, '.': 0, ')': 1}
+    y = y.apply(lambda x: [dic[i] for i in x])  # 将每一行的序列依次转换为数字
+    y = y.reset_index(drop=True)  # 重置索引
+    y = torch.tensor(y, dtype=torch.float32).unsqueeze(1)  # 转换为torch张量
+    y = y.unsqueeze(1)
+    print(y.shape)
+    return y.to(device)
 
 
 # 读取数据
@@ -187,21 +254,7 @@ def get_predictions(model, dataset, device):
 
 
 if __name__ == "__main__":
-    encoders = ['one-hot', 'triplet', 'dimer']
-    encoder = encoders[2]
-    data_names = ['rbs', 'promoter', 'rbs1', 'promoter1', 'rbs3', 'RBS-317']
-    data_name = data_names[5]
-    data_path = r'./data/' + data_name + '-data.csv'
-    model_names = ['GoogleNet', 'MobileNet']
-    model_name = model_names[1]
-    learning_rate = 0.001
-    batch_size = 64
-    num_epochs = 70
-    num_classes = 1  # 输出类别数
-    input_channels = 1  # 输入通道数 一般图像为3，这里由于是序列，所以为1
-    model_path = 'model/' + data_name + '-' + model_name + '_' + encoder + '.pth'
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('current device is:{}'.format(device))
     x_train, y_train, x_test, y_test, width = read_data(data_path)
 
