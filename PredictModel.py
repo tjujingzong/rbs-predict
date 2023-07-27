@@ -16,7 +16,7 @@ from torchvision.models.mobilenet import mobilenet_v2
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 encoders = ['triplet', 'dimer', 'dimer-1', 'combined']
 encoder = encoders[3]
-data_names = ['RBS-232', 'RBS-317']
+data_names = ['RBS-232', 'RBS-317', 'RBS-417']
 data_name = data_names[0]
 data_path = r'./data/' + data_name + '-data.csv'
 model_names = ['GoogleNet', 'MobileNet']
